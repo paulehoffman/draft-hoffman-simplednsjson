@@ -144,6 +144,41 @@ This code can be treated similarly to a SERVFAIL response in DNS.</t>
 of strings, with each string representing a single address.</t>
 
 </section>
+<section anchor="example" title="Example">
+
+<t>For example, assume a DNS API server is following this specification
+on origin https://dnsserver.example.net/ and the well-known path.
+The examples uses HTTP/2 formatting from <xref target="RFC7540"/>.</t>
+
+<t>A query for the IN A records for “www.example.com” with recursion
+turned on using the GET method with the wireformat would be:</t>
+
+<figure><artwork><![CDATA[
+:method = GET
+:scheme = https
+:authority = dnsserver.example.net
+:path = /.well-known/dns-query?
+        content-type=application/simpledns+json&  (no CR)
+        { "name": "www.example.com", "type": "A" }
+accept = application/simpledns+json
+]]></artwork></figure>
+
+<t>[[ Does anything in that preceding example need to be escaped
+or quoted? ]]</t>
+
+<t>The response might be:</t>
+
+<figure><artwork><![CDATA[
+:status = 200
+content-type = application/simpledns+json
+content-length = 34
+cache-control = max-age=128
+
+{"code":0, "v4":["93.184.216.34"]}
+
+]]></artwork></figure>
+
+</section>
 <section anchor="iana" title="IANA Considerations">
 
 <section anchor="registration-of-applicationsimplednsjson-media-type" title="Registration of application/simpledns+json Media Type">
@@ -318,6 +353,21 @@ Change controller:  IESG
 
 
 
+<reference  anchor="RFC7540" target='http://www.rfc-editor.org/info/rfc7540'>
+<front>
+<title>Hypertext Transfer Protocol Version 2 (HTTP/2)</title>
+<author initials='M.' surname='Belshe' fullname='M. Belshe'><organization /></author>
+<author initials='R.' surname='Peon' fullname='R. Peon'><organization /></author>
+<author initials='M.' surname='Thomson' fullname='M. Thomson' role='editor'><organization /></author>
+<date year='2015' month='May' />
+<abstract><t>This specification describes an optimized expression of the semantics of the Hypertext Transfer Protocol (HTTP), referred to as HTTP version 2 (HTTP/2).  HTTP/2 enables a more efficient use of network resources and a reduced perception of latency by introducing header field compression and allowing multiple concurrent exchanges on the same connection.  It also introduces unsolicited push of representations from servers to clients.</t><t>This specification is an alternative to, but does not obsolete, the HTTP/1.1 message syntax.  HTTP's existing semantics remain unchanged.</t></abstract>
+</front>
+<seriesInfo name='RFC' value='7540'/>
+<seriesInfo name='DOI' value='10.17487/RFC7540'/>
+</reference>
+
+
+
 
     </references>
 
@@ -326,55 +376,63 @@ Change controller:  IESG
   </back>
 
 <!-- ##markdown-source:
-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
-rSl1Xzbd3zs7apFQzTvr97VcpNkxl0vaCj3fhxGVB1qps6aYHqyclkg+hzTb
-i9soIVqm4LkteaxPM1Yq27abIufqwXWAXs5cNKlSOt+RSSCrbnqyidWrffWv
-lLo0WeVt3D5wCeg1XYV9fJBLGx0eMQ551nFryM9xR3xs/wz8AMHz9koaMCza
-RR1jCOzd/SA53mWg9psvHvcucqiqbYimudU01xnzJVvqEremsHQ+dn+bkJIo
-UF9cZ/y9y2/jPLct87X3MpDYVF/jLlRWXEQvwyt4Kwl8zwN5Oyp3FqY6A+27
-sKQFiwhuuNA7IufAAaL3m/RbUHvFRMFLZWbpx5VF5WU42XOn+9tS/8kfkTgl
-JV/ZKr6RwCzPrmczhiqXdZYC68p2Xdwap5+3iL7NyHEKM7vsQfqGd05OL//a
-9KUX1CLqATk0KyCIMa5P4XHo0cK71R6UuTS3Mv9Jbx5nN6XboBavZa5DZDUf
-74am2VSXFV9Rw1pKU2ZRpth2stxD3P8A1Iii0dcUAAA=
+H4sIAEvgMVkAA61Y23LbOBJ9x1eglKqppFaSL3FmEu1mZ7S2M9FWJHtsZy+V
+pLYgEpIQUwRDgJY1Lu+37+kGSFG+TR5WDzZJNBqN7tOnG+j1esIbn+mBPDfL
+ItPyaHIuf6t0abSTKk/lmXaFzR3eTC7/fn4yEWo6LfXV1oR6KLVJrpZQlpZq
+5nsLO5stVd5zLJnm7quzuRDOQ/F/VGZzSPqy0kKYouRH5/d3d9/s7gtVajWQ
+w9KLy9VAjnKvy1z73hHpFYnyA+l8KkRhBkJKb5OBXGsXHlNd+MVAHuDN2dKX
+eubqUbdebl6FqvzCllDQwxD2gO+nffk+GE2fwl5OVZW1v9pyDosOh5MJveml
+MtlAFhDqx/3+YhKV533ICZHbcqm8udJk59m7w73dl6/i4/7e3pv4+PLgzX58
+fPX6zW58/GnvFQSEyWdtJaPeUb1QDy7t2Std9hbeF66e9uoAGkSv15Nq6nyp
+Ei/ExcI4ifBUS517mWqXlGZKIebA9abK6VSGdeifdJvgfgtoEISGskZDHzGR
+npQmmNqVnTChI5da5U52bJ6tZeX0DL6DPjHX3pt8LocMqiF+0JXYMnWdvtw2
+TmXOwsKZyWGfX2ihiiKDS72x+U4DpT8RlrBaapT060KTFi2L0ixVySuzYdLO
+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
 
 -->
 

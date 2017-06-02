@@ -32,6 +32,7 @@ normative:
 
 informative:
   I-D.hoffman-dns-over-https:
+  RFC7540:
 
 --- abstract
 
@@ -135,6 +136,40 @@ This code can be treated similarly to a SERVFAIL response in DNS.
 If they are included, the "v4" and "v6" members MUST each contain a list
 of strings, with each string representing a single address.
 
+
+# Example
+
+For example, assume a DNS API server is following this specification
+on origin https://dnsserver.example.net/ and the well-known path.
+The examples uses HTTP/2 formatting from {{RFC7540}}.
+
+A query for the IN A records for "www.example.com" with recursion
+turned on using the GET method with the wireformat would be:
+
+~~~~~
+:method = GET
+:scheme = https
+:authority = dnsserver.example.net
+:path = /.well-known/dns-query?
+        content-type=application/simpledns+json&  (no CR)
+        { "name": "www.example.com", "type": "A" }
+accept = application/simpledns+json
+~~~~~
+
+\[\[ Does anything in that preceding example need to be escaped
+or quoted? \]\]
+
+The response might be:
+
+~~~~~
+:status = 200
+content-type = application/simpledns+json
+content-length = 34
+cache-control = max-age=128
+
+{"code":0, "v4":["93.184.216.34"]}
+
+~~~~~
 
 # IANA Considerations {#iana}
 
