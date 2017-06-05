@@ -1,0 +1,229 @@
+---
+title: Simple DNS Queries and Responses in JSON
+abbrev: Simple DNS in JSON
+docname: draft-hoffman-simplednsjson
+
+stand_alone: true
+
+ipr: trust200902
+area: Art
+kw: Internet-Draft
+cat: std
+
+pi:
+  toc: yes
+  tocdepth: 4
+  sortrefs: yes
+  symrefs: yes
+
+author:
+ -
+   ins: P. Hoffman
+   name: Paul Hoffman
+   org: ICANN
+   email: paul.hoffman@icann.org
+
+normative:
+  RFC1035:
+  RFC2119:
+  RFC3492:
+  RFC5890:
+  RFC7159:
+
+informative:
+  I-D.hoffman-dns-over-https:
+  RFC7540:
+
+--- abstract
+
+This document describes a JSON-based format for simple DNS queries
+and responses. In this case, "simple" means "only useful for
+getting A and AAAA records". This document also defines the
+application/simpledns+json media type. The primary use case of this
+format is programs that do not want to take on the programmatic
+overhead needed to use messages in the
+application/dns-udpwireformat media type.
+
+\[ This paragraph is to be removed when this document is published as an RFC \]
+Comments on this draft can be sent to the DNS over HTTP mailing list at
+<https://www.ietf.org/mailman/listinfo/dnsoverhttp>.
+
+--- middle
+
+# Introduction
+
+This document also defines the application/simpledns+json media
+type. The data format in this media type allows clients to ask for
+the DNS {{RFC1035}} address records (A and AAAA records) for a
+domain name, and get back just the basic answer information. The
+contents of the message are in JSON {{RFC7159}}.
+
+The primary use case of this format is programs that do not want to
+take on the programmatic overhead needed to use messages in the
+application/dns-udpwireformat media type. Data in
+application/simpledns+json is a JSON object with very few members
+in the query or in the response, whereas using the
+application/dns-udpwireformat requires a program to be able to
+assemble and disassemble full DNS messages. Queries using
+application/simpledns+json only let the program ask for IP address,
+while queries using application/dns-udpwireformat allow any asking
+for any DNS data type, and using any DNS extension.
+
+The application/simpledns+json format is expected to be useful in
+HTTP, such as the protocol described in
+{{I-D.hoffman-dns-over-https}}.
+
+## Terminology
+
+In this document, the key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+"SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" are to be interpreted as
+described in BCP 14, RFC 2119 {{RFC2119}}.
+
+# Using the Simple JSON DNS Query Format in HTTP
+
+When used in HTTP or similar protocols, the media type
+for carrying the data described here is "application/simpledns+json".
+The body of the query, and the contents of the response, are JSON objects.
+The definition of those objects is given here, but the query and
+response objects MAY have other elements that are either defined later
+or are based on local implementation decisions.
+
+# Queries
+
+The structure of a query is:
+
+~~~~~
+{ "name": str,
+  "type": str
+}
+~~~~~
+
+The "name" member MUST be present in queries. The "type" member is optional in queries.
+
+The name is given as a host name; IDNs {{RFC5890}} are expressed in Punycode {{RFC3492}}.
+
+The type is given as a string, and one of the following three values MUST be used:
+"A", "AAAA", and "A-and-AAAA". If the "type" member is not
+included, a server treats the query as if it was for "A-and-AAAA".
+
+# Responses
+
+The structure of a response is:
+
+~~~~~
+{ "code": int,
+  "v4": [ zero or more addresses as strs ],
+  "v6": [ zero or more addresses as strs ]
+}
+~~~~~
+
+The "code" member MUST be present in responses. The "v4" and "v6" members are optional in responses.
+
+The value for "code" MUST be one of the following:
+
+0:
+: The name exists. This does not mean that A or AAAA records exist, just that the name
+exists. This code can be treated similarly to a NOERROR response in DNS.
+
+1:
+: The name does not exist.
+This code can be treated similarly to a NXDOMAIN response in DNS.
+
+2:
+: Service failure.
+This code can be treated similarly to a SERVFAIL response in DNS.
+
+If they are included, the "v4" and "v6" members MUST each contain a list
+of strings, with each string representing a single address.
+
+
+# Example
+
+For example, assume a DNS API server is following this specification
+on origin https://dnsserver.example.net/ and the well-known path.
+The examples uses HTTP/2 formatting from {{RFC7540}}.
+
+A query for the IN A records for "www.example.com" with recursion
+turned on using the GET method with the wireformat would be:
+
+~~~~~
+:method = GET
+:scheme = https
+:authority = dnsserver.example.net
+:path = /.well-known/dns-query?
+        content-type=application/simpledns+json&  (no CR)
+        { "name": "www.example.com", "type": "A" }
+accept = application/simpledns+json
+~~~~~
+
+\[\[ Does anything in that preceding example need to be escaped
+or quoted? \]\]
+
+The response might be:
+
+~~~~~
+:status = 200
+content-type = application/simpledns+json
+content-length = 34
+cache-control = max-age=128
+
+{"code":0, "v4":["93.184.216.34"]}
+
+~~~~~
+
+# IANA Considerations {#iana}
+
+## Registration of application/simpledns+json Media Type
+
+~~~~~
+To: ietf-types@iana.org
+Subject: Registration of MIME media type application/simpledns+json
+
+MIME media type name: application
+
+MIME subtype name: simpledns+json
+
+Required parameters: n/a
+
+Optional parameters: n/a
+
+Encoding considerations: This is a binary format. The contents are
+JSON {{RFC7159}}. (Note that {{RFC7159}} states that JSON is a
+binary format.)
+
+Security considerations:  See {{RFC7159}}, Section 12.
+
+Interoperability considerations:  None.
+
+Published specification:  This document.
+
+Applications that use this media type: Systems that want to
+exchange short DNS queries and limited DNS responses.
+
+Additional information:
+
+Magic number(s):  n/a
+
+File extension(s):  n/a
+
+Macintosh file type code(s):  n/a
+
+Person & email address to contact for further information:
+Paul Hoffman, paul.hoffman@icann.org
+
+Intended usage:  COMMON
+
+Restrictions on usage:  n/a
+
+Author:  Paul Hoffman, paul.hoffman@icann.org
+
+Change controller:  IESG
+~~~~~
+
+# Security Considerations {#Security}
+
+All security considerations from {{RFC7159}} apply here.
+
+# Acknowledgments
+
+Patrick McManus inspired the creation of this document.
